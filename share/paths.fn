@@ -58,5 +58,14 @@ BRIDGE_BROWSER_PROCESSED_DIR="/tmp/fusion360-browser-processed"
 BRIDGE_CALLBACK_REQUEST_DIR="/tmp/fusion360-callback-requests"
 BRIDGE_CALLBACK_PROCESSED_DIR="/tmp/fusion360-callback-processed"
 
-# mktemp-based temporary directory — created at source time, cleaned up by traps.fn
-FUSION_TEMP_DIR="${FUSION_TEMP_DIR:-$(mktemp -d -t fusion360.XXXX)}"
+# Per-process temporary directory. Created on first use by ensure_fusion_temp_dir
+# (call it, then use "$FUSION_TEMP_DIR"), not at source time: every script that
+# sources load.sh (including daemons the health check restarts) used to leave an
+# empty /tmp/fusion360.XXXX behind. Users should run cleanup_temp_files on exit.
+FUSION_TEMP_DIR="${FUSION_TEMP_DIR:-}"
+
+ensure_fusion_temp_dir() {
+  if [[ -z "$FUSION_TEMP_DIR" || ! -d "$FUSION_TEMP_DIR" ]]; then
+    FUSION_TEMP_DIR="$(mktemp -d -t fusion360.XXXX)" || return 1
+  fi
+}
