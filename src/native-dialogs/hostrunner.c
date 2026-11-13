@@ -20,6 +20,11 @@ int main(int argc, char **argv)
         if (fd < 0) _exit(3);
         dup2(fd, 1);
         close(fd);
+        /* Proton prepends its own libs to LD_LIBRARY_PATH; host Qt apps
+         * (kdialog) segfault in QXkbCommon with them. Restore the host value. */
+        const char *orig = getenv("ORIG_LD_LIBRARY_PATH");
+        if (orig && *orig) setenv("LD_LIBRARY_PATH", orig, 1);
+        else unsetenv("LD_LIBRARY_PATH");
         execvp(argv[3], &argv[3]);
         _exit(127);
     }
